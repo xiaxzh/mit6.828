@@ -185,31 +185,34 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
+	
+	if (tf->tf_trapno == T_PGFLT) {
+		// 如果是page fault
+		page_fault_handler(tf);
+		return;
+	} else if (tf->tf_trapno == T_BRKPT) {
+		// 如果是breakpoint
+		monitor(tf);
+		return;
+	} else if (tf->tf_trapno == T_SYSCALL) {
+		// The system call number will go in %eax, 
+		// and the arguments (up to five of them) will go in %edx, %ecx, %ebx, %edi, and %esi, respectively. 
+		int32_t ret = syscall(tf->tf_regs.reg_eax,
+			tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+			tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi,
+			tf->tf_regs.reg_esi);
+		tf->tf_regs.reg_eax = ret;
+		return;
+	}
+
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
-		// 如果内核触发中断，例如缺页或者除0。视为内核bug
-		panic("unhandled trap in kernel");
+		panic("unhandled trap in kernel"); 
 	else {
-		if (tf->tf_trapno == T_PGFLT) {
-			// 如果是page fault
-			page_fault_handler(tf);
-		} else if (tf->tf_trapno == T_BRKPT) {
-			// 如果是breakpoint
-			monitor(tf);
-		} else if (tf->tf_trapno == T_SYSCALL) {
-			// The system call number will go in %eax, 
-			// and the arguments (up to five of them) will go in %edx, %ecx, %ebx, %edi, and %esi, respectively. 
-			int32_t ret = syscall(tf->tf_regs.reg_eax,
-				tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
-				tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi,
-				tf->tf_regs.reg_esi);
-			tf->tf_regs.reg_eax = ret;
-		} else {
-			env_destroy(curenv);
-			return;
-		}
-	} 
+		env_destroy(curenv);
+		return;
+	}
 }
 
 void

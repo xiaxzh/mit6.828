@@ -81,6 +81,11 @@ static void check_page_installed_pgdir(void);
 // If we're out of memory, boot_alloc should panic.
 // This function may ONLY be used during initialization,
 // before the page_free_list list has been set up.
+/*
+ * 在内核没有建立起页配置器page_alloc的相关数据结构之前，
+ * 使用boot_alloc，在内核的堆区申请内存，完成page_alloc
+ * 的自举工作。
+ */
 static void *
 boot_alloc(uint32_t n)
 {
@@ -146,6 +151,12 @@ mem_init(void)
 	// following line.)
 
 	// Permissions: kernel R, user R
+	/*
+	 * 疑问：为什么这里设置只读？
+	 * 回答：这里设置只读是为了防止用户不进入内核态就可以修改页目录，
+	 * 因此设置的只读。而内核修改页目录，并不需要访问UVPT这段虚拟地址，
+	 * 而是直接在内核的堆区直接修改。
+	 */
 	kern_pgdir[PDX(UVPT)] = PTE_ADDR(PADDR(kern_pgdir)) | PTE_U | PTE_P;
 
 	//////////////////////////////////////////////////////////////////////
@@ -155,6 +166,18 @@ mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
+	/*
+	 * pages是页配置器的最主要的数据结构。逻辑上，pages
+	 * 与物理页面一一对应，struct PageInfo内含pp_link
+	 * 和pp_ref。
+	 * 
+	 * 前者用于表示，当前页面为空闲状态时链接的
+	 * 下一个空闲页面（使用单链表的方式进行管理）；
+	 * 
+	 * 后者用于记录该页面所被映射（虚拟地址->物理地址）的次数。
+	 * 每建立一次映射，计数+1，取消一次映射，计数-1。当计数为0时，
+	 * 将该页面重新放回空闲链表中，等待下一次分配。
+	 */
 	pages = (struct PageInfo*) boot_alloc(npages * sizeof(struct PageInfo));
 	memset(pages, 0, npages * sizeof(struct PageInfo));
 
@@ -179,7 +202,10 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-
+	/*
+	 * 将pages映射到UPAGES中，设置权限为只读。
+	 * 与kern_pgdir中设置原因一致
+	 */
 	boot_map_region(kern_pgdir, UPAGES, npages*sizeof(struct PageInfo), PADDR(pages), PTE_U);
 	
 	//////////////////////////////////////////////////////////////////////
@@ -193,6 +219,11 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	/*
+	 * 将内核栈区映射到[KSTACKTOP-KSTKSZIE, KSTACKTOP)
+	 * 出于保护的目的，对[KSTACKTOP-PTSIZE, KSTACKTOP-KSTKSZIE)不做映射
+	 * 当内核栈要溢出时，硬件MMU将触发页错误。
+	 */
 	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
@@ -203,6 +234,9 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	/*
+	 * 做好内核部分的映射。
+	 */
 	boot_map_region(kern_pgdir, KERNBASE, 0xffffffff-KERNBASE, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
@@ -262,14 +296,7 @@ page_init(void)
 	// Change the code to reflect this.
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
-	/*
-		size_t i;
-		for (i = 0; i < npages; i++) {
-			pages[i].pp_ref = 0;
-			pages[i].pp_link = page_free_list;
-			page_free_list = &pages[i];
-		}
-	*/
+
 	page_free_list = NULL;
 	// 占用第一页
 	pages[0].pp_ref = 1;
@@ -339,7 +366,7 @@ page_free(struct PageInfo *pp)
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
 	if (pp->pp_ref)
-		panic("pp->pp_ref is nonzero pp->pp_link is not null");
+		panic("pp->pp_ref is nonzero");
 	if (pp->pp_link)
 		panic("pp->pp_link is not null");
 	pp->pp_link = page_free_list;
@@ -391,11 +418,16 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		if (create == false)	return NULL;
 		struct PageInfo* pp = page_alloc(ALLOC_ZERO);
 		if (pp == NULL)	return NULL;
-		pp->pp_ref++;
 		*ppde = page2pa(pp) | (PTE_P | PTE_W | PTE_U);
+		pp->pp_ref++;
 	}
 	// 3. kvaddress->index of ptable
 	size_t ptIndex = PTX(va);
+	/*
+	 * 这里很好地解释了将内核部分[KERNBASE, 0xfffffff-KERNBASE)映射到[0, 0xffffffff-KERNBASE)
+	 * 的好处，已知内核数据的物理地址PTE_ADDR(*ppde)，如果将其转换为虚拟地址
+	 * KADDR(PTE_ADDR(*ppde))，即加上KERNBASE即可。
+	 */
 	pte_t* ppt = (pte_t*) KADDR(PTE_ADDR(*ppde)); // PTE_ADDR去掉标识位
 	// 4. 返回
 	return ppt+ptIndex;
@@ -416,7 +448,6 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
-	size = ROUNDUP(size, PGSIZE);
 	for (physaddr_t i = pa, j = va; i < pa+size; i += PGSIZE, j += PGSIZE) {
 		pte_t* ppte = pgdir_walk(pgdir, (void*)j, true);
 		*ppte = i | (perm | PTE_P);
