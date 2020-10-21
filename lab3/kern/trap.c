@@ -86,24 +86,24 @@ trap_init(void)
 
 	// LAB 3: Your code here.
 	// 职责：建立中断向量表
-	SETGATE(idt[T_DIVIDE], 1, GD_KT, divide_handle, 0);
-	SETGATE(idt[T_DEBUG], 1, GD_KT, debug_handle, 0);
-	SETGATE(idt[T_NMI], 1, GD_KT, nmi_handle, 0);
-	SETGATE(idt[T_BRKPT], 1, GD_KT, brkpt_handle, 3); // 课程中将breakpoint异常中的DPL设置为3
-	SETGATE(idt[T_OFLOW], 1, GD_KT, oflow_handle, 0);
-	SETGATE(idt[T_BOUND], 1, GD_KT, bound_handle, 0);
-	SETGATE(idt[T_ILLOP], 1, GD_KT, illop_handle, 0);
-	SETGATE(idt[T_DEVICE], 1, GD_KT, device_handle, 0);
-	SETGATE(idt[T_DBLFLT], 1, GD_KT, dblflt_handle, 0);
-	SETGATE(idt[T_TSS], 1, GD_KT, tss_handle, 0);
-	SETGATE(idt[T_SEGNP], 1, GD_KT, segnp_handle, 0);
-	SETGATE(idt[T_STACK], 1, GD_KT, stack_handle, 0);
-	SETGATE(idt[T_GPFLT], 1, GD_KT, gpflt_handle, 0);
-	SETGATE(idt[T_PGFLT], 1, GD_KT, pgflt_handle, 0);
-	SETGATE(idt[T_FPERR], 1, GD_KT, fperr_handle, 0);
-	SETGATE(idt[T_ALIGN], 1, GD_KT, align_handle, 0);
-	SETGATE(idt[T_MCHK], 1, GD_KT, mchk_handle, 0);
-	SETGATE(idt[T_SIMDERR], 1, GD_KT, simderr_handle, 0);
+	SETGATE(idt[T_DIVIDE], 0, GD_KT, divide_handle, 0);
+	SETGATE(idt[T_DEBUG], 0, GD_KT, debug_handle, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, nmi_handle, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, brkpt_handle, 3); // 课程中将breakpoint异常中的DPL设置为3
+	SETGATE(idt[T_OFLOW], 0, GD_KT, oflow_handle, 0);
+	SETGATE(idt[T_BOUND], 0, GD_KT, bound_handle, 0);
+	SETGATE(idt[T_ILLOP], 0, GD_KT, illop_handle, 0);
+	SETGATE(idt[T_DEVICE], 0, GD_KT, device_handle, 0);
+	SETGATE(idt[T_DBLFLT], 0, GD_KT, dblflt_handle, 0);
+	SETGATE(idt[T_TSS], 0, GD_KT, tss_handle, 0);
+	SETGATE(idt[T_SEGNP], 0, GD_KT, segnp_handle, 0);
+	SETGATE(idt[T_STACK], 0, GD_KT, stack_handle, 0);
+	SETGATE(idt[T_GPFLT], 0, GD_KT, gpflt_handle, 0);
+	SETGATE(idt[T_PGFLT], 0, GD_KT, pgflt_handle, 0);
+	SETGATE(idt[T_FPERR], 0, GD_KT, fperr_handle, 0);
+	SETGATE(idt[T_ALIGN], 0, GD_KT, align_handle, 0);
+	SETGATE(idt[T_MCHK], 0, GD_KT, mchk_handle, 0);
+	SETGATE(idt[T_SIMDERR], 0, GD_KT, simderr_handle, 0);
 
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, syscall_handle, 3);
 	// Per-CPU setup 
