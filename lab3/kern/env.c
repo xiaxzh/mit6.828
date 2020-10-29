@@ -526,7 +526,7 @@ env_run(struct Env *e)
 	// LAB 3: Your code here.
 
 	if (e != curenv) {
-		if (curenv) {
+		if (curenv && curenv->env_status == ENV_RUNNING) {
 			curenv->env_status = ENV_RUNNABLE;
 			/*
 			 * 疑问：为什么被切换下来的env不需要保存寄存器状态
