@@ -3,3 +3,6 @@
 [notes of lab2](https://www.notion.so/Lab-2-Memory-Management-7cea2ce8c3c7482aab080ceb4cccae81)
 
 [notes of lab3](https://www.notion.so/Lab-3-User-Environments-e58ee6fc4c3d41a0bf4ab5cc91941ea2)
+
+[notes of lab4](https://www.notion.so/Lab-4-Preemptive-Multitasking-48df5bed262d419296619fde90d19607)
+
