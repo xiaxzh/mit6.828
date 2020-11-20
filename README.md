@@ -7,3 +7,5 @@
 [notes of lab4](https://www.notion.so/Lab-4-Preemptive-Multitasking-48df5bed262d419296619fde90d19607)
 
 [notes of lab5](https://www.notion.so/Lab-5-File-system-Spawn-and-Shell-1b8a651141fc49f19267b4416074a60e)
+
+[notes of lab6](https://www.notion.so/Lab-6-Network-Driver-0adb6574c7e045369bb95d9f09cd0d4f)
