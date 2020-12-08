@@ -1,5 +1,7 @@
 # MIT-6.828: OS Engineering
 
+[good looking notes in Notion](https://www.notion.so/MIT-6-828-OS-Engineering-48dc7bf0f820401bafc6ae821185a503)
+
 # How to construct an OS?
 
 ---
